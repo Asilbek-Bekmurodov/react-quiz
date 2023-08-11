@@ -1,9 +1,9 @@
 import Option from "./Option";
-function Question({ question }) {
+function Question({ question, dispatch, answer }) {
   return (
     <div>
       <h4>{question.question}</h4>
-      <Option question={question} />
+      <Option dispatch={dispatch} answer={answer} question={question} />
     </div>
   );
 }
