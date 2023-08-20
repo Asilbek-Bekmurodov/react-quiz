@@ -8,6 +8,8 @@ import Question from "./Question";
 import NextButton from "./NextButton";
 import Progress from "./Progress";
 import FinishedScreen from "./FinishedScreen";
+import Timer from "./Timer";
+import Footer from "./Footer";
 
 const initialState = {
   questions: [],
@@ -17,6 +19,7 @@ const initialState = {
   answer: null,
   points: 0,
   highScore: 0,
+  secondsRemaining: null,
 };
 
 function reducer(state, action) {
@@ -26,7 +29,11 @@ function reducer(state, action) {
     case "failedData":
       return { ...state, status: "error" };
     case "start":
-      return { ...state, status: "start" };
+      return {
+        ...state,
+        status: "start",
+        secondsRemaining: state.questions.length * 30,
+      };
     case "newAnswer":
       const question = state.questions.at(state.index);
 
@@ -40,6 +47,13 @@ function reducer(state, action) {
       };
     case "nextQuestion":
       return { ...state, index: state.index + 1, answer: null };
+    case "restart":
+      return {
+        ...initialState,
+        questions: state.questions,
+        status: "ready",
+        highScore: state.highScore,
+      };
     case "finishQuiz":
       return {
         ...state,
@@ -47,14 +61,23 @@ function reducer(state, action) {
         highScore:
           state.points > state.highScore ? state.points : state.highScore,
       };
+
+    case "timer":
+      return {
+        ...state,
+        secondsRemaining: state.secondsRemaining - 1,
+        status: state.secondsRemaining === 0 ? "finally" : state.status,
+      };
     default:
       throw new Error("unknown action");
   }
 }
 
 function App() {
-  const [{ status, questions, highScore, index, answer, points }, dispatch] =
-    useReducer(reducer, initialState);
+  const [
+    { status, secondsRemaining, questions, highScore, index, answer, points },
+    dispatch,
+  ] = useReducer(reducer, initialState);
   const numQuestions = questions.length;
   const maxPossiblePoints = questions.reduce(
     (prev, cur) => prev + cur.points,
@@ -90,13 +113,16 @@ function App() {
               dispatch={dispatch}
               question={questions[index]}
             />
-            <NextButton
-              questions={questions}
-              dispatch={dispatch}
-              answer={answer}
-              numQuestions={numQuestions}
-              index={index}
-            />
+            <Footer>
+              <Timer dispatch={dispatch} secondsRemaining={secondsRemaining} />
+              <NextButton
+                questions={questions}
+                dispatch={dispatch}
+                answer={answer}
+                numQuestions={numQuestions}
+                index={index}
+              />
+            </Footer>
           </>
         )}
         {status === "finally" && (
@@ -104,6 +130,7 @@ function App() {
             points={points}
             maxPossiblePoints={maxPossiblePoints}
             highScore={highScore}
+            dispatch={dispatch}
           />
         )}
       </Main>
